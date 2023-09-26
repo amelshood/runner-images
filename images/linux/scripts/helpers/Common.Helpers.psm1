@@ -1,3 +1,4 @@
+$HELPER_SCRIPTS = $args[0]
 function Get-CommandResult {
     param (
         [Parameter(Mandatory=$true)]
