@@ -1,3 +1,4 @@
+$HELPER_SCRIPTS = $args[0]
 function Take-OutputPart {
     param (
         [Parameter(ValueFromPipeline)]
