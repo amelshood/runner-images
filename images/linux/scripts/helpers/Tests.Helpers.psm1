@@ -1,3 +1,4 @@
+$HELPER_SCRIPTS = $args[0]
 Import-Module "$PSScriptRoot/../helpers/Common.Helpers.psm1" -DisableNameChecking
 
 # Validates that tool is installed and in PATH
