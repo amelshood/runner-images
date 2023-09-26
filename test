@@ -1,0 +1,23 @@
+git clone https://github.com/actions/runner-images.git
+cd runner-images
+
+
+#!/bin/bash
+
+# Clone the repo
+git clone https://github.com/actions/runner-images.git
+
+# Navigate to Ubuntu 20.04 installers directory
+cd runner-images/images/linux/scripts/installers
+
+# Execute each script one by one
+for script in *.sh; do
+    echo "Executing $script..."
+    bash "$script"
+done
+
+echo "All scripts executed!"
+
+
+chmod +x setup_ubuntu_20_04.sh
+./setup_ubuntu_20_04.sh
