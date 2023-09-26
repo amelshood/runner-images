@@ -4,6 +4,7 @@
 ##  Desc:  Install toolset
 ################################################################################
 
+$HELPER_SCRIPTS = $args[0]
 Function Install-Asset {
     param(
         [Parameter(Mandatory = $true)]
