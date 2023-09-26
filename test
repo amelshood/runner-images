@@ -1,23 +1,39 @@
-git clone https://github.com/actions/runner-images.git
-cd runner-images
-
-
 #!/bin/bash
 
 # Clone the repo
 git clone https://github.com/actions/runner-images.git
 
+# Define the HELPER_SCRIPTS variable
+HELPER_SCRIPTS_PATH="$(pwd)/runner-images/images/linux/scripts/helpers"
+
 # Navigate to Ubuntu 20.04 installers directory
 cd runner-images/images/linux/scripts/installers
 
-# Execute each script one by one
+# Check if pwsh is available
+if command -v pwsh > /dev/null 2>&1; then
+    # Execute .ps1 scripts
+    for script in *.ps1; do
+        echo "Executing $script..."
+
+        # Invoke the PowerShell script and pass $HELPER_SCRIPTS value
+        pwsh -File "$script" -ArgumentList $HELPER_SCRIPTS_PATH
+    done
+else
+    echo "PowerShell Core (pwsh) is not available. Skipping .ps1 scripts."
+fi
+
+# Execute .sh scripts
 for script in *.sh; do
     echo "Executing $script..."
+
+    # Substitute $HELPER_SCRIPTS with actual path
+    sed -i "s|\$HELPER_SCRIPTS|$HELPER_SCRIPTS_PATH|g" "$script"
+
     bash "$script"
 done
 
 echo "All scripts executed!"
 
 
-chmod +x setup_ubuntu_20_04.sh
-./setup_ubuntu_20_04.sh
+In your .ps1 scripts, you would catch the passed argument and assign it to the $HELPER_SCRIPTS variable like this (this should be added near the top of each .ps1 script):
+$HELPER_SCRIPTS = $args[0]
