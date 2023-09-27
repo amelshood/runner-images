@@ -1,0 +1,70 @@
+Certainly! PowerShell .ps1 scripts are designed to run on Windows, but you can execute them on Ubuntu using PowerShell Core. Here's how you can modify the script to include the execution of .ps1 files:
+
+    First, install PowerShell Core on your Ubuntu VM:
+
+bash
+
+# Update the list of packages
+sudo apt-get update
+
+# Install pre-requisite packages
+sudo apt-get install -y wget apt-transport-https software-properties-common
+
+# Download the Microsoft repository GPG keys
+wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
+
+# Register the Microsoft repository GPG keys
+sudo dpkg -i packages-microsoft-prod.deb
+
+# Update the list of products
+sudo apt-get update
+
+# Enable the "universe" repositories
+sudo add-apt-repository universe
+
+# Install PowerShell
+sudo apt-get install -y powershell
+
+    Modify the script to execute .ps1 files from the installers folder:
+
+bash
+
+#!/bin/bash
+
+# Exit on error
+set -e
+
+# Clone the runner-images repository
+git clone https://github.com/actions/runner-images.git
+cd runner-images
+
+# Navigate to the Ubuntu 20.04 scripts directory
+cd images/linux/scripts
+
+# These directories contain scripts that setup the Ubuntu 20.04 environment
+script_directories=(
+    "base"
+    "boosters"
+    "browsers-google"
+    "installers"
+    "toolcache"
+    "tools"
+)
+
+for dir in "${script_directories[@]}"; do
+    echo "Executing scripts from $dir directory"
+    for script in $(ls $dir); do
+        if [[ "$script" == *.sh ]]; then
+            bash "$dir/$script"
+        elif [[ "$script" == *.ps1 ]]; then
+            # Execute using PowerShell Core
+            pwsh -File "$dir/$script"
+        fi
+    done
+done
+
+echo "All scripts executed successfully!"
+
+This modified script will now execute both .sh and .ps1 files. Make sure to install PowerShell Core on your Ubuntu 20.04 VM as described in the first step, and then proceed with running the modified script.
+
+Also, keep in mind that while PowerShell Core provides compatibility to run PowerShell scripts on Linux, not all Windows PowerShell modules or commands are available. Ensure you review the .ps1 scripts to verify they use compatible commands and modules for Linux.
