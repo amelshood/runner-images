@@ -1,0 +1,103 @@
+parameters:
+  - name: adoOrgName
+    displayName: 'Azure DevOps Organization Name'
+  - name: adoProjectName
+    displayName: 'Azure DevOps Project Name'
+  - name: adoPoolName
+    displayName: 'Azure DevOps Agent Pool Name'
+  - name: maxVMs
+    displayName: 'Maximum VMs in Scale Set'
+  - name: standbyAgents
+    displayName: 'Number of Standby Agents'
+  - name: idleTimeoutMinutes
+    displayName: 'Delay Before Deleting Idle Agents (minutes)'
+
+stages:
+- stage: UpdateAgentPool
+  jobs:
+  - job: UpdatePoolSettings
+    steps:
+    - script: |
+        # Login to Azure DevOps using PAT
+        az login $(System.AccessToken)
+
+        # Construct API endpoint for agent pool
+        poolUrl="https://dev.azure.com/$(parameters.adoOrgName)/$(parameters.adoProjectName)/_apis/distributedtask/pools/$ (parameters.adoPoolName)?api-version=6.0-preview.1"
+
+        # Update pool settings with desired values
+        az rest --method PATCH --uri $poolUrl --body "{ 'maximumVirtualAgents': $(parameters.maxVMs), 'idleTimeoutInMinutes': $(parameters.idleTimeoutMinutes), 'minimumVirtualAgents': $(parameters.standbyAgents) }"
+
+    # Use personal access token (PAT) for authentication. Make sure the PAT has sufficient permissions to update agent pools.
+
+
+
+parameters:
+  - name: adoOrgName
+    type: string
+  - name: adoProjectName
+    type: string
+  - name: adoPoolName
+    type: string
+  - name: maxVMs
+    type: int
+  - name: standbyAgents
+    type: int
+  - name: idleTimeoutMinutes
+    type: int
+
+jobs:
+- job: UpdateAgentPool
+  steps:
+  - script: |
+    # Login to Azure DevOps
+    az login $(System.AccessToken)
+
+    # Define pool update URL
+    poolUrl="https://dev.azure.com/$(parameters.adoOrgName)/$(parameters.adoProjectName)/_apis/agentpool/pools/$(parameters.adoPoolName)?api-version=6.0-preview.1"
+
+    # Build updated pool settings object
+    updatePoolBody="{ 'properties': { 'maximumVirtualMachines': $(parameters.maxVMs), 'idleDetectionTimeoutInMinutes': $(parameters.idleTimeoutMinutes), 'standbyAgents': $(parameters.standbyAgents) } }"
+
+    # Update agent pool using PATCH request
+    Invoke-RestMethod -Uri $poolUrl -Method Patch -Headers @{Authorization="Bearer $(System.AccessToken)"} -Body $updatePoolBody -ContentType application/json
+
+    # Success message
+    Write-Host "Agent pool '$(parameters.adoPoolName)' settings updated successfully!"
+
+
+
+
+parameters:
+  - name: ADO_OrgName
+    type: string
+  - name: ADO_ProjectName
+    type: string
+  - name: ADO_PoolName
+    type: string
+  - name: MaxVMs
+    type: integer
+  - name: StandbyAgents
+    type: integer
+  - name: IdleAgentDelay
+    type: integer
+
+stages:
+- stage: Update_AgentPool
+  jobs:
+  - job: UpdatePoolSettings
+    steps:
+    - script: |
+        # Login using Azure DevOps service connection
+        az login $(System.AccessToken)
+
+        # Build ARM resource ID for the agent pool
+        poolId=$(az pipelines agent pool list --organization $(parameters.ADO_OrgName) --project $(parameters.ADO_ProjectName) --query "[?name=='$(parameters.ADO_PoolName)'].id" -o output)
+
+        # Update pool settings using ARM API
+        az resource update \
+          --resource-group $(poolId | split('/')[4]) \
+          --name $(poolId | split('/')[8]) \
+          --api-version 2016-08-31 \
+          --is-partial-update true \
+          --properties "{ properties: { agentPoolProperties: { scaleSetSettings: { maxVMs: $(parameters.MaxVMs), idleTimeoutInMinutes: $(parameters.IdleAgentDelay) }, retentionPolicy: { idleAgentCount: $(parameters.StandbyAgents) } } } }"
+
